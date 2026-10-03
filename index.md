@@ -1,38 +1,40 @@
-# 4× AND Gate Discrete Transistor Circuit — Sri Lanka List & Estimate
-
-If you build a circuit that utilizes **4 AND gates** instead (or construct a latch/logic network made entirely of 4 discrete transistor-level AND gates), each 2-input AND gate requires:
-* 2 NPN Transistors
-* 2 Base Resistors ($R_1$)
-* 1 Pull-Down Resistor ($R_2$)
+# Discrete Transistor T Latch (3-Input AND Version) — Sri Lanka Component List
 
 ---
 
-## 1. Required Components
+## 1. Core Circuit Components
 
-* **NPN Bipolar Junction Transistors:** **8 pcs**
+* **NPN Bipolar Junction Transistors:** **12 pcs**
   * *Recommended Part:* `2N3904` or `BC547` (TO-92)
-  * *Quantity:* 2 transistors per AND gate × 4 gates = **8 transistors**
+  * *Distribution:* 8 transistors (for two 3-input AND gates) + 4 transistors (for two 2-input NOR gates)
 
-* **Base Resistors ($R_1$):** **8 pcs**
-  * *Recommended Value:* `10 kΩ` (1/4 Watt, carbon film)
-  * *Quantity:* 2 resistors per AND gate × 4 gates = **8 resistors**
+* **Base Current Limiting Resistors ($R_1$):** **12 pcs**
+  * *Recommended Value:* `10 kΩ` (1/4 Watt, Carbon Film)
 
-* **Pull-Down Resistors ($R_2$):** **4 pcs**
-  * *Recommended Value:* `1 kΩ` to `10 kΩ` (1/4 Watt, carbon film)
-  * *Quantity:* 1 resistor per AND gate × 4 gates = **4 resistors**
+* **Pull-Down / Pull-Up Load Resistors ($R_2$):** **6 pcs**
+  * *Recommended Value:* `1 kΩ` to `10 kΩ` (1/4 Watt, Carbon Film)
+  * *Distribution:* 4 pull-down resistors (for the AND stage outputs) + 2 pull-up resistors (for the NOR stage outputs)
 
 ---
 
-## 2. Updated Sri Lanka Price Breakdown (LKR)
+## 2. Prototyping Gear & Power
 
-| Component | Quantity | Unit Price (LKR) | Estimated Total (LKR) |
+* **Solderless Breadboard:** 1 pc (Standard 830 tie-point / MB-102 recommended due to component count)
+* **Jumper Wire Pack:** 1 set (Male-to-Male jumper wires, 10 cm or 20 cm)
+* **Power Source:** 5V DC supply (USB, battery pack, or bench power supply)
+
+---
+
+## 3. Updated Sri Lanka Price Breakdown (LKR)
+
+| Item | Quantity | Unit Price (LKR) | Estimated Total (LKR) |
 | :--- | :---: | :---: | :---: |
-| 2N3904 / BC547 Transistors | 8 | LKR 5 – 15 | LKR 40 – 120 |
-| 10 kΩ Resistors | 8 | LKR 2 – 5 | LKR 16 – 40 |
-| 1 kΩ Resistors | 4 | LKR 2 – 5 | LKR 8 – 20 |
-| **Subtotal (Components Only)** | | | **~LKR 64 – 180** |
-| Standard Solderless Breadboard (MB-102) | 1 | LKR 140 – 260 | LKR 140 – 260 |
-| Male-to-Male Jumper Wire Pack | 1 | LKR 190 – 250 | LKR 190 – 250 |
-| **Grand Total (Full Prototyping Kit)** | | | **~LKR 394 – 690** |
+| 2N3904 / BC547 Transistors | 12 | LKR 8 – 15 | LKR 96 – 180 |
+| 10 kΩ Resistors | 12 | LKR 2 – 5 | LKR 24 – 60 |
+| 1 kΩ Resistors | 6 | LKR 2 – 5 | LKR 12 – 30 |
+| **Subtotal (Electronic Parts Only)** | | | **~LKR 132 – 270** |
+| Large Solderless Breadboard (830 Tie-Point) | 1 | LKR 200 – 350 | LKR 200 – 350 |
+| Male-to-Male Jumper Wire Ribbon (40p) | 1 | LKR 190 – 250 | LKR 190 – 250 |
+| **Grand Total (With Prototyping Equipment)** | | | **~LKR 522 – 870** |
 
-*Note: Alternatively, if you prefer using integrated circuit chips, a single **74HC08** IC contains four 2-input AND gates inside one 14-pin package and typically costs around **LKR 80 – 150** at shops like Scion Electronics or Tronic.lk.*
+*Note: If buying from local electronic retailers in Pettah/First Cross Street or sites like Scion Electronics / Tronic.lk, purchasing transistors in small 10–20 unit packs yields better per-unit discounts.*
