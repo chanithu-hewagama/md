@@ -1,4 +1,6 @@
-# Discrete Transistor T Latch (3-Input AND Version) — Sri Lanka Component List
+# Discrete Transistor T Latch (3-Input AND Version) — Assembly Materials & Estimate
+
+Here is your updated component and assembly list with all breadboard prototyping gear removed and replaced with soldering tools, wire, and power connection hardware for a permanent build.
 
 ---
 
@@ -17,11 +19,12 @@
 
 ---
 
-## 2. Prototyping Gear & Power
+## 2. Assembly & Power Hardware
 
-* **Solderless Breadboard:** 1 pc (Standard 830 tie-point / MB-102 recommended due to component count)
-* **Jumper Wire Pack:** 1 set (Male-to-Male jumper wires, 10 cm or 20 cm)
-* **Power Source:** 5V DC supply (USB, battery pack, or bench power supply)
+* **Perfboard / Veroboard (Dot Matrix):** 1 pc (Standard 5x7 cm or 7x9 cm single-sided copper board)
+* **Solderable Connecting Wires:** 1 roll or multi-color pack (24–28 AWG solid core or stranded hook-up wire)
+* **Solder Wire:** ~10 grams or small tube (60/40 rosin core solder or lead-free)
+* **Male DC Barrel Jack Connector:** 1 pc (Standard 2.1mm × 5.5mm male plug to pair with your female jack)
 
 ---
 
@@ -33,8 +36,10 @@
 | 10 kΩ Resistors | 12 | LKR 2 – 5 | LKR 24 – 60 |
 | 1 kΩ Resistors | 6 | LKR 2 – 5 | LKR 12 – 30 |
 | **Subtotal (Electronic Parts Only)** | | | **~LKR 132 – 270** |
-| Large Solderless Breadboard (830 Tie-Point) | 1 | LKR 200 – 350 | LKR 200 – 350 |
-| Male-to-Male Jumper Wire Ribbon (40p) | 1 | LKR 190 – 250 | LKR 190 – 250 |
-| **Grand Total (With Prototyping Equipment)** | | | **~LKR 522 – 870** |
+| Perfboard / Veroboard (5x7 cm) | 1 | LKR 60 – 120 | LKR 60 – 120 |
+| Hook-Up Connecting Wire (1–2 meters) | 1 | LKR 50 – 100 | LKR 50 – 100 |
+| Small Solder Wire Tube / Pack | 1 | LKR 150 – 250 | LKR 150 – 250 |
+| Male DC Barrel Jack (2.1mm) | 1 | LKR 40 – 80 | LKR 40 – 80 |
+| **Grand Total (Parts & Soldering Supplies)** | | | **~LKR 432 – 820** |
 
-*Note: If buying from local electronic retailers in Pettah/First Cross Street or sites like Scion Electronics / Tronic.lk, purchasing transistors in small 10–20 unit packs yields better per-unit discounts.*
+*Note: Prices reflect standard retail rates at local electronics shops in Pettah/First Cross Street or Sri Lankan online electronics stores (e.g., Scion Electronics, Tronic.lk).*
