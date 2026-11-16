@@ -1,45 +1,239 @@
-# Discrete Transistor T Latch (3-Input AND Version) — Assembly Materials & Estimate
+# Linux Mint Portable Server Setup
 
-Here is your updated component and assembly list with all breadboard prototyping gear removed and replaced with soldering tools, wire, and power connection hardware for a permanent build.
+Complete installation and configuration block for **Apache**, **PostgreSQL**, **Python CGI (`psycopg2`)**, **`ttyd`**, **Docker**, **`kubectl`**, **`k3d`**, **Prometheus**, **Node Exporter**, and **Grafana**.
 
+```bash
+# 1. Install system packages (Apache, PostgreSQL, Python, ttyd, Docker)
+sudo apt update
+sudo apt install -y apache2 postgresql postgresql-contrib python3 python3-psycopg2 ttyd docker.io curl
+
+# 2. Enable native systemd services
+sudo systemctl enable --now apache2 postgresql docker
+sudo usermod -aG docker "$USER"
+
+# 3. Configure PostgreSQL user and database
+sudo -u postgres psql -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'chanithu') THEN CREATE USER chanithu WITH PASSWORD 'StrongPass123' SUPERUSER; END IF; END \$\$;"
+sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = 'chanidb'" | grep -q 1 || sudo -u postgres psql -c "CREATE DATABASE chanidb OWNER chanithu;"
+
+# 4. Enable Apache modules and configure reverse proxies + Python CGI
+sudo a2enmod cgid headers proxy proxy_http proxy_wstunnel
+
+sudo tee /etc/apache2/sites-available/000-default.conf > /dev/null <<'EOF'
+<VirtualHost *:80>
+    DocumentRoot /var/www/html
+    ProxyPreserveHost On
+
+    # Python CGI + PostgreSQL
+    ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
+    <Directory "/usr/lib/cgi-bin">
+        AllowOverride None
+        Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+        Require all granted
+    </Directory>
+
+    # ttyd Web Terminal (port 8080)
+    RedirectMatch 301 ^/terminal$ /terminal/
+    ProxyPass /terminal/ http://127.0.0.1:8080/terminal/ upgrade=websocket
+    ProxyPassReverse /terminal/ http://127.0.0.1:8080/terminal/
+
+    # Grafana Dashboard (port 3000)
+    RedirectMatch 301 ^/grafana$ /grafana/
+    ProxyPass /grafana/ http://127.0.0.1:3000/ upgrade=websocket
+    ProxyPassReverse /grafana/ http://127.0.0.1:3000/
+
+    # Prometheus Metrics (port 9090)
+    RedirectMatch 301 ^/prometheus$ /prometheus/
+    ProxyPass /prometheus/ http://127.0.0.1:9090/
+    ProxyPassReverse /prometheus/ http://127.0.0.1:9090/
+</VirtualHost>
+EOF
+
+sudo systemctl reload apache2
+
+# 5. Create Python CGI + PostgreSQL verification script
+sudo tee /usr/lib/cgi-bin/dbtest.py > /dev/null <<'EOF'
+#!/usr/bin/env python3
+import psycopg2
+
+print("Content-Type: text/html\n")
+try:
+    conn = psycopg2.connect(dbname="chanidb", user="chanithu", password="StrongPass123", host="127.0.0.1")
+    cur = conn.cursor()
+    cur.execute("SELECT version();")
+    version = cur.fetchone()
+    print(f"<h2>Connected to PostgreSQL!</h2><p>{version}</p>")
+    cur.close()
+    conn.close()
+except Exception as e:
+    print(f"<h2>Database Error:</h2><pre>{e}</pre>")
+EOF
+
+sudo chmod +x /usr/lib/cgi-bin/dbtest.py
+
+# 6. Install kubectl and k3d
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+rm -f kubectl
+curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+
+# 7. Create k3d Kubernetes cluster
+sudo k3d cluster list | grep -q "chanithu" || sudo k3d cluster create chanithu
+sudo mkdir -p /root/.kube && sudo k3d kubeconfig get chanithu | sudo tee /root/.kube/config > /dev/null
+
+# 8. Deploy Prometheus, Node Exporter, and Grafana into Kubernetes
+sudo kubectl apply -f - <<'EOF'
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+      - job_name: 'node-exporter'
+        static_configs:
+          - targets: ['node-exporter-service:9100']
 ---
-
-## 1. Core Circuit Components
-
-* **NPN Bipolar Junction Transistors:** **12 pcs**
-  * *Recommended Part:* `2N3904` or `BC547` (TO-92)
-  * *Distribution:* 8 transistors (for two 3-input AND gates) + 4 transistors (for two 2-input NOR gates)
-
-* **Base Current Limiting Resistors ($R_1$):** **12 pcs**
-  * *Recommended Value:* `10 kΩ` (1/4 Watt, Carbon Film)
-
-* **Pull-Down / Pull-Up Load Resistors ($R_2$):** **6 pcs**
-  * *Recommended Value:* `1 kΩ` to `10 kΩ` (1/4 Watt, Carbon Film)
-  * *Distribution:* 4 pull-down resistors (for the AND stage outputs) + 2 pull-up resistors (for the NOR stage outputs)
-
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:latest
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --web.external-url=http://localhost/prometheus/
+            - --web.route-prefix=/
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus/
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
 ---
-
-## 2. Assembly & Power Hardware
-
-* **Perfboard / Veroboard (Dot Matrix):** 1 pc (Standard 5x7 cm or 7x9 cm single-sided copper board)
-* **Solderable Connecting Wires:** 1 roll or multi-color pack (24–28 AWG solid core or stranded hook-up wire)
-* **Solder Wire:** ~10 grams or small tube (60/40 rosin core solder or lead-free)
-* **Male DC Barrel Jack Connector:** 1 pc (Standard 2.1mm × 5.5mm male plug to pair with your female jack)
-
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090
 ---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+    spec:
+      hostPID: true
+      hostIPC: true
+      hostNetwork: true
+      containers:
+        - name: node-exporter
+          image: prom/node-exporter:latest
+          args:
+            - --path.procfs=/host/proc
+            - --path.sysfs=/host/sys
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-exporter-service
+spec:
+  selector:
+    app: node-exporter
+  ports:
+    - port: 9100
+      targetPort: 9100
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              value: "admin"
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: "StrongPass123"
+            - name: GF_SERVER_ROOT_URL
+              value: "http://localhost/grafana/"
+            - name: GF_SERVER_SERVE_FROM_SUB_PATH
+              value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+spec:
+  selector:
+    app: grafana
+  ports:
+    - port: 3000
+      targetPort: 3000
+EOF
 
-## 3. Updated Sri Lanka Price Breakdown (LKR)
+# 9. Wait for Kubernetes pods and start port-forwards
+sudo kubectl rollout status deployment/prometheus deployment/grafana
+sudo kubectl port-forward service/prometheus-service 9090:9090 > /var/log/prometheus-pf.log 2>&1 &
+sudo kubectl port-forward service/grafana-service 3000:3000 > /var/log/grafana-pf.log 2>&1 &
 
-| Item | Quantity | Unit Price (LKR) | Estimated Total (LKR) |
-| :--- | :---: | :---: | :---: |
-| 2N3904 / BC547 Transistors | 12 | LKR 8 – 15 | LKR 96 – 180 |
-| 10 kΩ Resistors | 12 | LKR 2 – 5 | LKR 24 – 60 |
-| 1 kΩ Resistors | 6 | LKR 2 – 5 | LKR 12 – 30 |
-| **Subtotal (Electronic Parts Only)** | | | **~LKR 132 – 270** |
-| Perfboard / Veroboard (5x7 cm) | 1 | LKR 60 – 120 | LKR 60 – 120 |
-| Hook-Up Connecting Wire (1–2 meters) | 1 | LKR 50 – 100 | LKR 50 – 100 |
-| Small Solder Wire Tube / Pack | 1 | LKR 150 – 250 | LKR 150 – 250 |
-| Male DC Barrel Jack (2.1mm) | 1 | LKR 40 – 80 | LKR 40 – 80 |
-| **Grand Total (Parts & Soldering Supplies)** | | | **~LKR 432 – 820** |
-
-*Note: Prices reflect standard retail rates at local electronics shops in Pettah/First Cross Street or Sri Lankan online electronics stores (e.g., Scion Electronics, Tronic.lk).*
+# 10. Start ttyd web terminal in the foreground with live logs
+ttyd -c root:7530ADEF -W -i 127.0.0.1 -p 8080 -b /terminal bash
+```
